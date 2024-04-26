@@ -41,6 +41,7 @@ struct fr_display
 {
     fbdev_t g_fbdev;
     fbdev_fb_info_t g_fbInfo;
+    int refCount;
 };
 
 #define FREERTOS_EGL_BACKBUFFERS 2
@@ -156,8 +157,12 @@ static vg_lite_buffer_format_t video_format_to_vglite(video_pixel_format_t forma
 
 int GetDisplayByIndex(int display_id, NativeDisplayType* display_type)
 {
+    /* We support only one display instance. Once initialized, return a pointer
+     * to the global display instance and increase its reference count.
+     */
     if (os_display) {
         *display_type = os_display;
+        os_display->refCount++;
         return 0;
     }
 
@@ -166,6 +171,8 @@ int GetDisplayByIndex(int display_id, NativeDisplayType* display_type)
         return -1;
 
     memset(os_display, 0, sizeof(struct fr_display));
+    os_display->refCount++;
+
     BOARD_PrepareDisplayController();
     FBDEV_Open(&os_display->g_fbdev, &g_dc, 0);
     *display_type = os_display;
@@ -202,6 +209,12 @@ int GetDisplayInfo(NativeDisplayType display, int * width, int * height,
     return 0;
 }
 
+/* All calls to GetDisplay/GetDisplayByIndex return pointers to the same
+ * struct fr_display instance (os_display). This can result to multiple
+ * pointers indicating to the same memory region, and an increased reference
+ * counter. Avoid double frees by tearing down and freeing the display only
+ * once the reference counter reaches zero.
+ */
 int DestroyDisplay(NativeDisplayType display)
 {
     struct fr_display* disp = (struct fr_display*)display;
@@ -209,13 +222,20 @@ int DestroyDisplay(NativeDisplayType display)
     if (!disp)
         return 0;
 
-    FBDEV_Disable(&disp->g_fbdev);
-    FBDEV_Close(&disp->g_fbdev);
+    disp->refCount--;
 
-    if (disp == os_display)
-        os_display = NULL;
+    if (disp->refCount <= 0) {
+        if (disp->g_fbdev.dc) {
+            FBDEV_Disable(&disp->g_fbdev);
+            FBDEV_Close(&disp->g_fbdev);
+        }
 
-    free(disp);
+        if (disp == os_display)
+            os_display = NULL;
+
+        free(disp);
+    }
+
     return 0;
 }
 
