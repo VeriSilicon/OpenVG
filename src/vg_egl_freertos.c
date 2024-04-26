@@ -616,19 +616,6 @@ void* OSCreateWindowContext(NativeWindowType window)
 void OSDestroyWindowContext(void* context)
 {
     OSWindowContext* ctx = (OSWindowContext *)context;
-
-    if (!ctx)
-        return;
-
-    if (ctx->window)
-        free(ctx->window);
-
-    if (ctx->display) {
-        FBDEV_Disable(&ctx->display->g_fbdev);
-        FBDEV_Close(&ctx->display->g_fbdev);
-        free(ctx->display);
-    }
-
     free(ctx);
 }
 
