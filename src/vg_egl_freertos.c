@@ -69,79 +69,45 @@ struct fr_pixmap
 
 typedef struct
 {
-    struct fr_window* window;
-    struct fr_display* display;
+    struct fr_window *window;
+    struct fr_display *display;
 } OSWindowContext;
 
 struct eglFbPlatform
 {
-    int (*GetDisplay)( NativeDisplayType * display
-                             );
+    int (*GetDisplay)(NativeDisplayType *display);
 
-    int (*GetDisplayByIndex)(int displayIndex,
-                                    NativeDisplayType * display
-                                    );
+    int (*GetDisplayByIndex)(int displayIndex, NativeDisplayType *display);
 
-    int (*GetDisplayInfo)( NativeDisplayType display,
-                                 int * width,
-                                 int * height,
-                                 size_t * physical,
-                                 int * stride,
-                                 int * bitsPerPixel
-                                );
+    int (*GetDisplayInfo)(NativeDisplayType display, int *width, int *height,
+                          size_t *physical, int *stride, int *bitsPerPixel);
 
-    int (*DestroyDisplay)(NativeDisplayType Display
-                                );
+    int (*DestroyDisplay)(NativeDisplayType Display);
 
-    int (*CreateWindow)(NativeDisplayType Display,
-                                int X,
-                                int Y,
-                                int Width,
-                                int Height,
-                                NativeWindowType * Window
-                                );
+    int (*CreateWindow)(NativeDisplayType Display, int X, int Y, int Width,
+                        int Height, NativeWindowType *Window);
 
-    int (*GetWindowInfo)(NativeDisplayType Display,
-                                NativeWindowType Window,
-                                int * X,
-                                int * Y,
-                                int * Width,
-                                int * Height,
-                                int * BitsPerPixel,
-                                unsigned int * Offset
-                                );
+    int (*GetWindowInfo)(NativeDisplayType Display, NativeWindowType Window,
+                         int *X, int *Y, int *Width, int *Height,
+                         int *BitsPerPixel, unsigned int *Offset);
 
-    int (*DestroyWindow)(NativeDisplayType Display,
-                             NativeWindowType Window
-                            );
+    int (*DestroyWindow)(NativeDisplayType Display, NativeWindowType Window);
 
-    int (*CreatePixmap)( NativeDisplayType Display,
-                            int Width,
-                            int Height,
-                            int BitsPerPixel,
-                            NativePixmapType * Pixmap
-                            );
+    int (*CreatePixmap)(NativeDisplayType Display, int Width, int Height,
+                        int BitsPerPixel, NativePixmapType *Pixmap);
 
-    int (*GetPixmapInfo)(NativeDisplayType Display,
-                         NativePixmapType Pixmap,
-                         int * Width,
-                         int * Height,
-                         VGImageFormat* Format,
-                         int * BitsPerPixel,
-                         int * Stride,
-                         void** Bits
-                        );
+    int (*GetPixmapInfo)(NativeDisplayType Display, NativePixmapType Pixmap,
+                         int *Width, int *Height, VGImageFormat *Format,
+                         int *BitsPerPixel, int *Stride, void **Bits);
 
-    int (*DestroyPixmap)(NativeDisplayType Display,
-                         NativePixmapType Pixmap
-                        );
+    int (*DestroyPixmap)(NativeDisplayType Display, NativePixmapType Pixmap);
 
 };
 
-static struct eglFbPlatform* fbBackend = NULL;
-struct fr_display* os_display = NULL;
-SemaphoreHandle_t mutex = NULL;
-int mutex_locked = 0;
+static struct eglFbPlatform *fbBackend = NULL;
+static struct fr_display *os_display = NULL;
+static SemaphoreHandle_t mutex = NULL;
+static int mutex_locked = 0;
 
 static vg_lite_buffer_format_t video_format_to_vglite(video_pixel_format_t format)
 {
@@ -168,12 +134,13 @@ static vg_lite_buffer_format_t video_format_to_vglite(video_pixel_format_t forma
     return fmt;
 }
 
-int GetDisplayByIndex(int display_id, NativeDisplayType* display_type)
+int GetDisplayByIndex(int display_id, NativeDisplayType *display_type)
 {
     /* We support only one display instance. Once initialized, return a pointer
      * to the global display instance and increase its reference count.
      */
-    if (os_display) {
+    if (os_display)
+    {
         *display_type = os_display;
         os_display->refCount++;
         return 0;
@@ -193,15 +160,15 @@ int GetDisplayByIndex(int display_id, NativeDisplayType* display_type)
     return 0;
 }
 
-int GetDisplay(NativeDisplayType* display)
+int GetDisplay(NativeDisplayType *display)
 {
     return GetDisplayByIndex(0, display);
 }
 
-int GetDisplayInfo(NativeDisplayType display, int * width, int * height,
-                         size_t * physical, int * stride, int * bitsPerPixel)
+int GetDisplayInfo(NativeDisplayType display, int *width, int *height,
+                         size_t *physical, int *stride, int *bitsPerPixel)
 {
-    struct fr_display* disp = (struct fr_display*)display;
+    struct fr_display *disp = (struct fr_display*)display;
     fbdev_fb_info_t *g_fbInfo = &(disp->g_fbInfo);
 
     if (width)
@@ -230,15 +197,17 @@ int GetDisplayInfo(NativeDisplayType display, int * width, int * height,
  */
 int DestroyDisplay(NativeDisplayType display)
 {
-    struct fr_display* disp = (struct fr_display*)display;
+    struct fr_display *disp = (struct fr_display*)display;
 
     if (!disp)
         return 0;
 
     disp->refCount--;
 
-    if (disp->refCount <= 0) {
-        if (disp->g_fbdev.dc) {
+    if (disp->refCount <= 0)
+    {
+        if (disp->g_fbdev.dc)
+        {
             FBDEV_Disable(&disp->g_fbdev);
             FBDEV_Close(&disp->g_fbdev);
         }
@@ -252,12 +221,13 @@ int DestroyDisplay(NativeDisplayType display)
     return 0;
 }
 
-int CreateWindow(NativeDisplayType display, int x, int y, int width, int height, NativeWindowType *window)
+int CreateWindow(NativeDisplayType display, int x, int y, int width,
+                 int height, NativeWindowType *window)
 {
-    struct fr_display* disp = (struct fr_display*)display;
+    struct fr_display *disp = (struct fr_display*)display;
     fbdev_fb_info_t *g_fbInfo = &(disp->g_fbInfo);
     fbdev_t *g_fbdev = &(disp->g_fbdev);
-    struct fr_window* win = NULL;
+    struct fr_window *win = NULL;
     vg_lite_buffer_t *vg_buffer;
     status_t status;
     void *buffer;
@@ -316,13 +286,15 @@ int CreateWindow(NativeDisplayType display, int x, int y, int width, int height,
     return 0;
 }
 
-int GetWindowInfo(NativeDisplayType display, NativeWindowType window,  int* x, int* y,
-                    int* width, int* height, int* bitsPerPixel, unsigned int* offset)
+int GetWindowInfo(NativeDisplayType display, NativeWindowType window, int *x,
+                  int *y, int *width, int *height, int *bitsPerPixel,
+                  unsigned int *offset)
 {
-    struct fr_window* win = (struct fr_window*)window;
+    struct fr_window *win = (struct fr_window*)window;
     fbdev_fb_info_t g_fbInfo;
 
-    if (win == NULL) {
+    if (win == NULL)
+    {
         printf("%s: NULL window\n", __func__);
         return -1;
     }
@@ -337,7 +309,8 @@ int GetWindowInfo(NativeDisplayType display, NativeWindowType window,  int* x, i
         *offset = 0;
 
     if (!win->display) {
-        printf("%s: window isn't associated with an initialized display\n", __func__);
+        printf("%s: window isn't associated with an initialized display\n",
+               __func__);
         return -1;
     }
 
@@ -363,7 +336,8 @@ int DestroyWindow(NativeDisplayType display, NativeWindowType window)
     return 0;
 }
 
-int CreatePixmap(NativeDisplayType display, int width, int height, int bitsPerPixel, NativePixmapType* pixmap)
+int CreatePixmap(NativeDisplayType display, int width, int height,
+                 int bitsPerPixel, NativePixmapType *pixmap)
 {
     vg_lite_buffer_t *imgbuf = NULL;
     struct fr_pixmap *pmap = NULL;
@@ -383,7 +357,8 @@ int CreatePixmap(NativeDisplayType display, int width, int height, int bitsPerPi
     memset(pmap, 0, sizeof(struct fr_pixmap));
 
     imgbuf = (vg_lite_buffer_t*)malloc(sizeof(vg_lite_buffer_t));
-    if (!imgbuf) {
+    if (!imgbuf)
+    {
         free(pmap);
         return -1;
     }
@@ -394,7 +369,8 @@ int CreatePixmap(NativeDisplayType display, int width, int height, int bitsPerPi
     imgbuf->height = height;
     imgbuf->format = (vg_lite_buffer_format_t)format;
 
-    if (vg_lite_allocate(imgbuf) != VG_LITE_SUCCESS) {
+    if (vg_lite_allocate(imgbuf) != VG_LITE_SUCCESS)
+    {
         free(imgbuf);
         free(pmap);
         return -1;
@@ -409,12 +385,14 @@ int CreatePixmap(NativeDisplayType display, int width, int height, int bitsPerPi
     return 0;
 }
 
-static int GetPixmapInfo(NativeDisplayType display, NativePixmapType pixmap, int* width, int* height, VGImageFormat* format,
-                         int* bitsPerPixel, int* stride, void** bits)
+static int GetPixmapInfo(NativeDisplayType display, NativePixmapType pixmap,
+                         int *width, int *height, VGImageFormat *format,
+                         int *bitsPerPixel, int *stride, void **bits)
 {
-    struct fr_pixmap* pmap = (struct fr_pixmap*)pixmap;
+    struct fr_pixmap *pmap = (struct fr_pixmap*)pixmap;
 
-    if (pmap == NULL) {
+    if (pmap == NULL)
+    {
         printf("%s: invalid pixmap\n", __func__);
         return -1;
     }
@@ -443,12 +421,13 @@ static int GetPixmapInfo(NativeDisplayType display, NativePixmapType pixmap, int
 
 static int DestroyPixmap(NativeDisplayType display, NativePixmapType pixmap)
 {
-    struct fr_pixmap* pmap = (struct fr_pixmap*)pixmap;
+    struct fr_pixmap *pmap = (struct fr_pixmap*)pixmap;
 
     if (pmap == NULL)
         return 0;
 
-    if (pmap->imgbuf) {
+    if (pmap->imgbuf)
+    {
         vg_lite_free(pmap->imgbuf);
         free(pmap->imgbuf);
     }
@@ -474,15 +453,12 @@ static struct eglFbPlatform frBackend =
     DestroyPixmap
 };
 
-struct eglFbPlatform* getFbDevBackend()
+static struct eglFbPlatform *getFbDevBackend()
 {
     return &frBackend;
 }
 
-static void
-fbGetBackends(
-   struct eglFbPlatform ** fbBackend
-    )
+static void fbGetBackends(struct eglFbPlatform **fbBackend)
 {
     if (*fbBackend == NULL)
     {
@@ -490,8 +466,7 @@ fbGetBackends(
     }
 }
 
-void *
-fbGetDisplay(void *context)
+void *fbGetDisplay(void *context)
 {
     NativeDisplayType display = NULL;
     fbGetBackends(&fbBackend);
@@ -499,10 +474,7 @@ fbGetDisplay(void *context)
     return display;
 }
 
-void *
-fbGetDisplayByIndex(
-    int DisplayIndex
-    )
+void *fbGetDisplayByIndex(int DisplayIndex)
 {
     NativeDisplayType display = NULL;
     fbGetBackends(&fbBackend);
@@ -510,108 +482,88 @@ fbGetDisplayByIndex(
     return display;
 }
 
-void
-fbGetDisplayGeometry(
-     void * Display,
-    int* Width,
-    int* Height
-    )
+void fbGetDisplayGeometry(void *Display, int *Width, int *Height)
 {
     fbGetBackends(&fbBackend);
     fbBackend->GetDisplayInfo((void *)Display, Width, Height, NULL, NULL, NULL);
 }
 
-void
-fbGetDisplayInfo(
-    void * Display,
-    int* Width,
-    int* Height,
-    unsigned long *Physical,
-    int* Stride,
-    int* BitsPerPixel
-    )
+void fbGetDisplayInfo(void *Display, int *Width, int *Height,
+                      unsigned long *Physical, int *Stride, int *BitsPerPixel)
 {
     fbGetBackends(&fbBackend);
-    fbBackend->GetDisplayInfo(Display, Width, Height,(size_t*)Physical, Stride, BitsPerPixel);
+    fbBackend->GetDisplayInfo(Display, Width, Height,(size_t*)Physical, Stride,
+                              BitsPerPixel);
 }
 
-void
-fbDestroyDisplay(
-     void * Display
-    )
+void fbDestroyDisplay(void *Display)
 {
     fbGetBackends(&fbBackend);
     fbBackend->DestroyDisplay(Display);
 }
 
-void *
-fbCreateWindow(
-    void * display,
-    int x,
-    int y,
-    int width,
-    int height
-    )
+void *fbCreateWindow(void *Display, int X, int Y, int Width, int Height)
 {
     NativeWindowType window = NULL;
     fbGetBackends(&fbBackend);
-    fbBackend->CreateWindow((NativeDisplayType)display, x, y, width, height, &window);
+    fbBackend->CreateWindow((NativeDisplayType)Display, X, Y, Width, Height,
+                             &window);
     return window;
 }
 
 void
 fbGetWindowGeometry(
-    void * window,
-    int* x,
-    int* y,
-    int* width,
-    int* height
+    void *window,
+    int *x,
+    int *y,
+    int *width,
+    int *height
     )
 {
     fbGetBackends(&fbBackend);
-    fbBackend->GetWindowInfo(NULL, (void *)window, x, y, width, height, NULL, NULL);
+    fbBackend->GetWindowInfo(NULL, (void *)window, x, y, width, height, NULL,
+                             NULL);
 }
 
 void
 fbGetWindowInfo(
-    void * window,
-    int* x,
-    int* y,
-    int* width,
-    int* height,
-    int* bitsPerPixel,
-     unsigned int* offset
+    void *window,
+    int *x,
+    int *y,
+    int *width,
+    int *height,
+    int *bitsPerPixel,
+    unsigned int *offset
     )
 {
     fbGetBackends(&fbBackend);
-    fbBackend->GetWindowInfo(NULL, (NativeWindowType)window, x, y, width, height, bitsPerPixel, offset);
+    fbBackend->GetWindowInfo(NULL, (NativeWindowType)window, x, y, width,
+                             height, bitsPerPixel, offset);
 }
 
-void
-fbDestroyWindow(
-    void * window
-    )
+void fbDestroyWindow(void *Window)
 {
     fbGetBackends(&fbBackend);
-    fbBackend->DestroyWindow(NULL, (NativeWindowType)window);
+    fbBackend->DestroyWindow(NULL, (NativeWindowType)Window);
 }
 
 void *
 fbCreatePixmap(
-    void* display,
+    void *display,
     int width,
     int height
     )
 {
     NativePixmapType pixmap = NULL;
     fbGetBackends(&fbBackend);
-    fbBackend->CreatePixmap((NativeDisplayType)display, width, height, 32, &pixmap);
+    fbBackend->CreatePixmap((NativeDisplayType)display, width, height, 32,
+                            &pixmap);
     return pixmap;
 }
 
 void *
 fbCreatePixmapWithBpp(
-    void * display,
+    void *display,
     int width,
     int height,
     int bitsPerPixel
@@ -619,39 +571,42 @@ fbCreatePixmapWithBpp(
 {
     NativePixmapType pixmap = NULL;
     fbGetBackends(&fbBackend);
-    fbBackend->CreatePixmap((NativeDisplayType)display, width, height, bitsPerPixel, &pixmap);
+    fbBackend->CreatePixmap((NativeDisplayType)display, width, height,
+                            bitsPerPixel, &pixmap);
     return pixmap;
 }
 
 void
 fbGetPixmapGeometry(
-    void* pixmap,
-    int* width,
-    int* height
+    void *pixmap,
+    int *width,
+    int *height
     )
 {
     fbGetBackends(&fbBackend);
-    fbBackend->GetPixmapInfo(NULL, (NativePixmapType)pixmap, width, height, NULL, NULL, NULL, NULL);
+    fbBackend->GetPixmapInfo(NULL, (NativePixmapType)pixmap, width, height,
+                             NULL, NULL, NULL, NULL);
 }
 
 void
 fbGetPixmapInfo(
-    void* pixmap,
-    int* width,
-    int* height,
+    void *pixmap,
+    int *width,
+    int *height,
     VGImageFormat *format,
-    int* bitsPerPixel,
-    int* stride,
-    void** bits
+    int *bitsPerPixel,
+    int *stride,
+    void **bits
     )
 {
     fbGetBackends(&fbBackend);
-    fbBackend->GetPixmapInfo(NULL, (NativeDisplayType)pixmap, width, height, format, bitsPerPixel, stride, bits);
+    fbBackend->GetPixmapInfo(NULL, (NativeDisplayType)pixmap, width, height,
+                             format, bitsPerPixel, stride, bits);
 }
 
 void
 fbDestroyPixmap(
-    void * Pixmap
+    void *Pixmap
     )
 {
     fbGetBackends(&fbBackend);
@@ -716,8 +671,8 @@ void OSDeinitMutex(void)
 
 VGEGLDisplay* OSGetDisplay(NativeDisplayType display_id)
 {
-    struct fr_display* disp;
-    VGEGLDisplay* vdisplay;
+    struct fr_display *disp;
+    VGEGLDisplay *vdisplay;
     int err;
 
     /* The VGEGLDisplay is freed by the OpenVG EGL layer using 'free'
@@ -742,7 +697,7 @@ out:
     return NULL;
 }
 
-void OSDestroyDisplay(VGEGLDisplay* vdisplay)
+void OSDestroyDisplay(VGEGLDisplay *vdisplay)
 {
     fbDestroyDisplay(vdisplay->nativeDisplay);
 }
@@ -751,7 +706,8 @@ void* OSCreateWindowContext(NativeWindowType window)
 {
     OSWindowContext *ctx = NULL;
     ctx = (OSWindowContext *)malloc(sizeof(OSWindowContext));
-    if (ctx) {
+    if (ctx)
+    {
         memset(ctx, 0, sizeof(OSWindowContext));
         ctx->window = (struct fr_window *)window;
         ctx->display = ctx->window->display;
@@ -762,15 +718,15 @@ void* OSCreateWindowContext(NativeWindowType window)
     return ctx;
 }
 
-void OSDestroyWindowContext(void* context)
+void OSDestroyWindowContext(void *context)
 {
-    OSWindowContext* ctx = (OSWindowContext *)context;
+    OSWindowContext *ctx = (OSWindowContext *)context;
     free(ctx);
 }
 
-VGboolean OSIsWindow(const void* context)
+VGboolean OSIsWindow(const void *context)
 {
-    OSWindowContext* ctx = (OSWindowContext*)context;
+    OSWindowContext *ctx = (OSWindowContext*)context;
 
     if (ctx->window)
         return EGL_TRUE;
@@ -778,9 +734,9 @@ VGboolean OSIsWindow(const void* context)
         return EGL_FALSE;
 }
 
-void OSGetWindowSize(const void* context, int* width, int* height)
+void OSGetWindowSize(const void *context, int *width, int *height)
 {
-    OSWindowContext* ctx = (OSWindowContext*)context;
+    OSWindowContext *ctx = (OSWindowContext*)context;
 
     if (!ctx || !ctx->window)
         return;
@@ -789,18 +745,21 @@ void OSGetWindowSize(const void* context, int* width, int* height)
     *height = ctx->window->height;
 }
 
-void OSBlitToWindow(void* context, const Drawable* drawable)
+void OSBlitToWindow(void *context, const Drawable *drawable)
 {
-    vg_lite_buffer_t* vglbuf = drawable->m_color->m_image->m_vglbuf;
-    OSWindowContext* ctx = (OSWindowContext*)context;
-    struct fr_window* win = ctx->window;
+    vg_lite_buffer_t *vglbuf = drawable->m_color->m_image->m_vglbuf;
+    OSWindowContext *ctx = (OSWindowContext*)context;
+    struct fr_window *win = ctx->window;
 
     vgFinish();
     FBDEV_SetFrameBuffer(&win->display->g_fbdev, vglbuf->memory, 0);
 }
 
-VGuint OSGetPixmapInfo(NativePixmapType pixmap, VGuint* width, VGuint* height, VGImageFormat* format, VGuint* bitsPerPixel, VGuint* stride, VGubyte** bits)
+VGuint OSGetPixmapInfo(NativePixmapType pixmap, VGuint *width, VGuint *height,
+                       VGImageFormat *format, VGuint *bitsPerPixel,
+                       VGuint *stride, VGubyte **bits)
 {
-    fbGetPixmapInfo(pixmap, (int*)width, (int*)height, format, (int*)bitsPerPixel, (int*)stride, (void**)bits);
+    fbGetPixmapInfo(pixmap, (int*)width, (int*)height, format,
+                    (int*)bitsPerPixel, (int*)stride, (void**)bits);
     return 0;
 }

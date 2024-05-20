@@ -148,14 +148,17 @@ typedef void *EGLNativeWindowType;
 void *fbGetDisplay(void *context);
 void *fbGetDisplayByIndex(int DisplayIndex);
 void fbGetDisplayGeometry(void *Display, int *Width, int *Height);
-void fbGetDisplayInfo(void *Display, int *Width, int *Height, unsigned long *Physical, int *Stride, int *BitsPerPixel);
+void fbGetDisplayInfo(void *Display, int *Width, int *Height,
+                      unsigned long *Physical, int *Stride, int *BitsPerPixel);
 void fbDestroyDisplay(void *Display);
 void *fbCreateWindow(void *Display, int X, int Y, int Width, int Height);
 void fbGetWindowGeometry(void *Window, int *X, int *Y, int *Width, int *Height);
-void fbGetWindowInfo(void *Window, int *X, int *Y, int *Width, int *Height, int *BitsPerPixel, unsigned int *Offset);
+void fbGetWindowInfo(void *Window, int *X, int *Y, int *Width, int *Height,
+                     int *BitsPerPixel, unsigned int *Offset);
 void fbDestroyWindow(void *Window);
 void *fbCreatePixmap(void *Display, int Width, int Height);
-void *fbCreatePixmapWithBpp(void *Display, int Width, int Height, int BitsPerPixel);
+void *fbCreatePixmapWithBpp(void *Display, int Width, int Height,
+                            int BitsPerPixel);
 void fbGetPixmapGeometry(void *Pixmap, int *Width, int *Height );
 void fbGetPixmapInfo(void *Pixmap, int *Width, int *Height,
                      VGImageFormat *format, int *BitsPerPixel, int *Stride,
