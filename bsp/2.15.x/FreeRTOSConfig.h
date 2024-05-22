@@ -77,7 +77,7 @@
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
 
 // this is for pvPortMalloc()
-#define configTOTAL_HEAP_SIZE           (3*0xF000) //((size_t)(0x3000*20 + 6*0xF000))
+#define configTOTAL_HEAP_SIZE           (90*0xF000) //((size_t)(0x3000*20 + 6*0xF000))
 #define configAPPLICATION_ALLOCATED_HEAP        0
 
 /* Hook function related definitions. */
