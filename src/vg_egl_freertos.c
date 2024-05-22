@@ -54,6 +54,19 @@ struct fr_window
     int bufferCount;
 };
 
+struct fr_pixmap
+{
+    vg_lite_buffer_t *imgbuf;
+    /* Pointer to memory bits. */
+    void *bits;
+    /* Bits per pixel. */
+    int bpp;
+    /* Size and format. */
+    int width, height;
+    int stride;
+    VGImageFormat format;
+};
+
 typedef struct
 {
     struct fr_window* window;
@@ -350,6 +363,103 @@ int DestroyWindow(NativeDisplayType display, NativeWindowType window)
     return 0;
 }
 
+int CreatePixmap(NativeDisplayType display, int width, int height, int bitsPerPixel, NativePixmapType* pixmap)
+{
+    vg_lite_buffer_t *imgbuf = NULL;
+    struct fr_pixmap *pmap = NULL;
+    VGImageFormat format;
+
+    if (bitsPerPixel <= 16)
+        format = VG_sRGB_565;
+    else if (bitsPerPixel == 24)
+        format = VG_sXRGB_8888;
+    else
+        format = VG_sARGB_8888;
+
+    pmap = (struct fr_pixmap*)malloc(sizeof(struct fr_pixmap));
+    if (!pmap)
+        return -1;
+
+    memset(pmap, 0, sizeof(struct fr_pixmap));
+
+    imgbuf = (vg_lite_buffer_t*)malloc(sizeof(vg_lite_buffer_t));
+    if (!imgbuf) {
+        free(pmap);
+        return -1;
+    }
+
+    memset(imgbuf, 0, sizeof(vg_lite_buffer_t));
+
+    imgbuf->width = width;
+    imgbuf->height = height;
+    imgbuf->format = (vg_lite_buffer_format_t)format;
+
+    if (vg_lite_allocate(imgbuf) != VG_LITE_SUCCESS) {
+        free(imgbuf);
+        free(pmap);
+        return -1;
+    }
+
+    pmap->bits = imgbuf->memory;
+    pmap->stride = imgbuf->stride;
+    pmap->bpp = imgbuf->stride / imgbuf->width;
+    pmap->imgbuf = imgbuf;
+
+    *pixmap = (NativePixmapType)pmap;
+    return 0;
+}
+
+static int GetPixmapInfo(NativeDisplayType display, NativePixmapType pixmap, int* width, int* height, VGImageFormat* format,
+                         int* bitsPerPixel, int* stride, void** bits)
+{
+    struct fr_pixmap* pmap = (struct fr_pixmap*)pixmap;
+
+    if (pmap == NULL) {
+        printf("%s: invalid pixmap\n", __func__);
+        return -1;
+    }
+
+    if (width)
+        *width = (int)pmap->imgbuf->width;
+
+    if (height)
+        *height = (int)pmap->imgbuf->height;
+
+    if (format)
+        *format = (VGImageFormat)pmap->imgbuf->format;
+
+    if (bitsPerPixel)
+        *bitsPerPixel = (int)pmap->bpp;
+
+    if (stride)
+        *stride = (int)pmap->stride;
+
+    if (bits)
+        *bits = pmap->bits;
+
+    return 0;
+
+}
+
+static int DestroyPixmap(NativeDisplayType display, NativePixmapType pixmap)
+{
+    struct fr_pixmap* pmap = (struct fr_pixmap*)pixmap;
+
+    if (pmap == NULL)
+        return 0;
+
+    if (pmap->imgbuf) {
+        vg_lite_free(pmap->imgbuf);
+        free(pmap->imgbuf);
+    }
+
+    free(pmap);
+    pmap = NULL;
+    pixmap = NULL;
+
+    return 0;
+}
+
 static struct eglFbPlatform frBackend =
 {
     GetDisplay,
@@ -359,9 +469,9 @@ static struct eglFbPlatform frBackend =
     CreateWindow,
     GetWindowInfo,
     DestroyWindow,
-    NULL, //CreatePixmap
-    NULL, //GetPixmapInfo
-    NULL //DestroyPixmap
+    CreatePixmap,
+    GetPixmapInfo,
+    DestroyPixmap
 };
 
 struct eglFbPlatform* getFbDevBackend()
@@ -691,6 +801,6 @@ void OSBlitToWindow(void* context, const Drawable* drawable)
 
 VGuint OSGetPixmapInfo(NativePixmapType pixmap, VGuint* width, VGuint* height, VGImageFormat* format, VGuint* bitsPerPixel, VGuint* stride, VGubyte** bits)
 {
-    //TODO
+    fbGetPixmapInfo(pixmap, (int*)width, (int*)height, format, (int*)bitsPerPixel, (int*)stride, (void**)bits);
     return 0;
 }
