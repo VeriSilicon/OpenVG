@@ -303,6 +303,45 @@ int CreateWindow(NativeDisplayType display, int x, int y, int width, int height,
     return 0;
 }
 
+int GetWindowInfo(NativeDisplayType display, NativeWindowType window,  int* x, int* y,
+                    int* width, int* height, int* bitsPerPixel, unsigned int* offset)
+{
+    struct fr_window* win = (struct fr_window*)window;
+    fbdev_fb_info_t g_fbInfo;
+
+    if (win == NULL) {
+        printf("%s: NULL window\n", __func__);
+        return -1;
+    }
+
+    if (width)
+        *width = win->width;
+
+    if (height)
+        *height = win->height;
+
+    if (offset)
+        *offset = 0;
+
+    if (!win->display) {
+        printf("%s: window isn't associated with an initialized display\n", __func__);
+        return -1;
+    }
+
+    g_fbInfo = win->display->g_fbInfo;
+
+    if (x)
+        *x = g_fbInfo.bufInfo.startX;
+
+    if (y)
+        *y = g_fbInfo.bufInfo.startY;
+
+    if (bitsPerPixel)
+        *bitsPerPixel = VIDEO_GetPixelSizeBits(g_fbInfo.bufInfo.pixelFormat);
+
+    return 0;
+}
+
 int DestroyWindow(NativeDisplayType display, NativeWindowType window)
 {
     if (window)
@@ -318,7 +357,7 @@ static struct eglFbPlatform frBackend =
     GetDisplayInfo,
     DestroyDisplay,
     CreateWindow,
-    NULL, //GetWindowInfo
+    GetWindowInfo,
     DestroyWindow,
     NULL, //CreatePixmap
     NULL, //GetPixmapInfo
