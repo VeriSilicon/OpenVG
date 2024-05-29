@@ -8222,7 +8222,7 @@ void computeBlitRegion(int* sx, int* sy, int* dx, int* dy, int* w, int* h, int s
     *dx = dstsx;
     *dy = dstsy;
 }
-VGfloat gamma(VGfloat c)
+VGfloat vg_gamma(VGfloat c)
 {
     if( c <= 0.00304f )
         c *= 12.92f;
@@ -8231,7 +8231,7 @@ VGfloat gamma(VGfloat c)
     return c;
 }
 
-VGfloat invgamma(VGfloat c)
+VGfloat inv_vg_gamma(VGfloat c)
 {
     if (c <= 0.03928f)
         c /= 12.92f;
@@ -8281,30 +8281,30 @@ void convert(InternalFormat srcFormat, InternalFormat dstFormat, Color* c)
     }
 
     //From Section 3.4.2 of OpenVG spec
-    //1: sRGB = gamma(lRGB)
-    //2: lRGB = invgamma(sRGB)
+    //1: sRGB = vg_gamma(lRGB)
+    //2: lRGB = inv_vg_gamma(sRGB)
     //3: lL = 0.2126 lR + 0.7152 lG + 0.0722 lB
     //4: lRGB = lL
-    //5: sL = gamma(lL)
-    //6: lL = invgamma(sL)
+    //5: sL = vg_gamma(lL)
+    //6: lL = inv_vg_gamma(sL)
     //7: sRGB = sL
 
     unsigned int conversion = (srcFormat & (NONLINEAR | LUMINANCE)) | ((dstFormat & (NONLINEAR | LUMINANCE)) << 3);
 
     switch (conversion)
     {
-        case lRGBA | (sRGBA << 3) : c->r = gamma(c->r); c->g = gamma(c->g); c->b = gamma(c->b); break;
+        case lRGBA | (sRGBA << 3) : c->r = vg_gamma(c->r); c->g = vg_gamma(c->g); c->b = vg_gamma(c->b); break;
         case lRGBA | (lLA << 3) : c->r = c->g = c->b = lRGBtoL(c->r, c->g, c->b); break;
-        case lRGBA | (sLA << 3) : c->r = c->g = c->b = gamma(lRGBtoL(c->r, c->g, c->b)); break;
-        case sRGBA | (lRGBA << 3) : c->r = invgamma(c->r); c->g = invgamma(c->g); c->b = invgamma(c->b); break;
-        case sRGBA | (lLA << 3) : c->r = c->g = c->b = lRGBtoL(invgamma(c->r), invgamma(c->g), invgamma(c->b)); break;
-        case sRGBA | (sLA << 3) : c->r = c->g = c->b = gamma(lRGBtoL(invgamma(c->r), invgamma(c->g), invgamma(c->b))); break;
+        case lRGBA | (sLA << 3) : c->r = c->g = c->b = vg_gamma(lRGBtoL(c->r, c->g, c->b)); break;
+        case sRGBA | (lRGBA << 3) : c->r = inv_vg_gamma(c->r); c->g = inv_vg_gamma(c->g); c->b = inv_vg_gamma(c->b); break;
+        case sRGBA | (lLA << 3) : c->r = c->g = c->b = lRGBtoL(inv_vg_gamma(c->r), inv_vg_gamma(c->g), inv_vg_gamma(c->b)); break;
+        case sRGBA | (sLA << 3) : c->r = c->g = c->b = vg_gamma(lRGBtoL(inv_vg_gamma(c->r), inv_vg_gamma(c->g), inv_vg_gamma(c->b))); break;
         case lLA | (lRGBA << 3) : break;
-        case lLA | (sRGBA << 3) : c->r = gamma(c->r); c->g = gamma(c->g); c->b = gamma(c->b); break;
-        case lLA | (sLA << 3) : c->r = c->g = c->b = gamma(c->r); break;
-        case sLA | (lRGBA << 3) : c->r = c->g = c->b = invgamma(c->r); break;
+        case lLA | (sRGBA << 3) : c->r = vg_gamma(c->r); c->g = vg_gamma(c->g); c->b = vg_gamma(c->b); break;
+        case lLA | (sLA << 3) : c->r = c->g = c->b = vg_gamma(c->r); break;
+        case sLA | (lRGBA << 3) : c->r = c->g = c->b = inv_vg_gamma(c->r); break;
         case sLA | (sRGBA << 3) : break;
-        case sLA | (lLA << 3) : c->r = c->g = c->b = invgamma(c->r); break;
+        case sLA | (lLA << 3) : c->r = c->g = c->b = inv_vg_gamma(c->r); break;
         default:  break;
     }
 

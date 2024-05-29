@@ -1202,7 +1202,7 @@ void initDrawable(Drawable* drawable, ColorDescriptor desc, VGuint width, VGuint
     }
 }
 
-static VGfloat gamma(VGfloat c)
+static VGfloat vg_gamma(VGfloat c)
 {
     if (c <= 0.00304f)
         c *= 12.92f;
@@ -1211,7 +1211,7 @@ static VGfloat gamma(VGfloat c)
     return c;
 }
 
-static VGfloat invgamma(VGfloat c)
+static VGfloat inv_vg_gamma(VGfloat c)
 {
     if (c <= 0.03928f)
         c /= 12.92f;
@@ -1284,18 +1284,18 @@ void colorConvert(Color* color, InternalFormat outputFormat)
     VGuint conversion = (color->m_format & (NONLINEAR | LUMINANCE)) | ((outputFormat & (NONLINEAR | LUMINANCE)) << shift);
     switch (conversion)
     {
-        case lRGBA | (sRGBA << shift) : color->r = gamma(color->r); color->g = gamma(color->g); color->b = gamma(color->b); break;
+        case lRGBA | (sRGBA << shift) : color->r = vg_gamma(color->r); color->g = vg_gamma(color->g); color->b = vg_gamma(color->b); break;
         case lRGBA | (lLA << shift) : color->r = color->g = color->b = lRGBtoL(color->r, color->g, color->b); break;
-        case lRGBA | (sLA << shift) : color->r = color->g = color->b = gamma(lRGBtoL(color->r, color->g, color->b)); break;
-        case sRGBA | (lRGBA << shift) : color->r = invgamma(color->r); color->g = invgamma(color->g); color->b = invgamma(color->b); break;
-        case sRGBA | (lLA << shift) : color->r = color->g = color->b = lRGBtoL(invgamma(color->r), invgamma(color->g), invgamma(color->b)); break;
-        case sRGBA | (sLA << shift) : color->r = color->g = color->b = gamma(lRGBtoL(invgamma(color->r), invgamma(color->g), invgamma(color->b))); break;
+        case lRGBA | (sLA << shift) : color->r = color->g = color->b = vg_gamma(lRGBtoL(color->r, color->g, color->b)); break;
+        case sRGBA | (lRGBA << shift) : color->r = inv_vg_gamma(color->r); color->g = inv_vg_gamma(color->g); color->b = inv_vg_gamma(color->b); break;
+        case sRGBA | (lLA << shift) : color->r = color->g = color->b = lRGBtoL(inv_vg_gamma(color->r), inv_vg_gamma(color->g), inv_vg_gamma(color->b)); break;
+        case sRGBA | (sLA << shift) : color->r = color->g = color->b = vg_gamma(lRGBtoL(inv_vg_gamma(color->r), inv_vg_gamma(color->g), inv_vg_gamma(color->b))); break;
         case lLA | (lRGBA << shift) : break;
-        case lLA | (sRGBA << shift) : color->r = color->g = color->b = gamma(color->r); break;
-        case lLA | (sLA << shift) : color->r = color->g = color->b = gamma(color->r); break;
-        case sLA | (lRGBA << shift) : color->r = color->g = color->b = invgamma(color->r); break;
+        case lLA | (sRGBA << shift) : color->r = color->g = color->b = vg_gamma(color->r); break;
+        case lLA | (sLA << shift) : color->r = color->g = color->b = vg_gamma(color->r); break;
+        case sLA | (lRGBA << shift) : color->r = color->g = color->b = inv_vg_gamma(color->r); break;
         case sLA | (sRGBA << shift) : break;
-        case sLA | (lLA << shift) : color->r = color->g = color->b = invgamma(color->r); break;
+        case sLA | (lLA << shift) : color->r = color->g = color->b = inv_vg_gamma(color->r); break;
         default: VG_ASSERT((color->m_format & (LUMINANCE | NONLINEAR)) == (outputFormat & (LUMINANCE | NONLINEAR))); break;
     }
 
