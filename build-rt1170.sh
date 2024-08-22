@@ -10,7 +10,7 @@ export G_MODE='Unix Makefiles'
 export ARMGCC_DIR=/home/nxa07475/work/toolchains/gcc-arm-none-eabi-10.3-2021.10/
 export VG_LITE_DIR=/home/nxa07475/work/gpu-vglite/__install_release_rt1170/
 export MCU_SDK_DIR=/home/nxa07475/mcuxpresso/02/SDKPackages/SDK_2_15_000_MIMXRT1170-EVK/
-export MCU_SDK_VER=2.15.x
+export MCU_SDK_VER=2.16.x
 
 export BUILD_TYPE=SDRAM_RELEASE
 
