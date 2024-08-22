@@ -335,8 +335,6 @@ static VG_INLINE VGboolean isValidImageFormat(int f)
 
 #endif /* __VG_IMAGE_H__ */
 
-void get_format_bytes(vg_lite_buffer_format_t format, uint32_t* mul, uint32_t* div, uint32_t* bytes_align);
-
 VGuint vgFormatTovgliteFormat(VGImageFormat format);
 
 void setGlyphToPath(VGFont font, VGuint index, VGPath path, VGboolean isHinted, const Vector2* origin, const Vector2* escapement);
