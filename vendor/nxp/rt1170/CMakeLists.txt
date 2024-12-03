@@ -1,12 +1,3 @@
-if(CMAKE_BUILD_TYPE STREQUAL SDRAM_DEBUG)
-    add_definitions(-DOPENVG_DEBUG_BUILD=1)
-    include (sdram_debug.cmake)
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL SDRAM_RELEASE)
-    add_definitions(-DOPENVG_RELEASE_BUILD=1)
-    include (sdram_release.cmake)
-endif()
-
 ###############################################################################
 # libOpenVG
 ###############################################################################
@@ -46,3 +37,33 @@ target_include_directories(
     ${MCU_SDK_DIR}/boards/evkbmimxrt1170/openvg_examples/openvg_tiger/cm7
 )
 
+include (flags.cmake)
+
+install(
+    DIRECTORY ${PROJ_DIR}/include/Vivante
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    DIRECTORY ${PROJ_DIR}/include/EGL
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    DIRECTORY ${PROJ_DIR}/include/VG
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    DIRECTORY ${PROJ_DIR}/include/KHR
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+    TARGETS OpenVG
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
