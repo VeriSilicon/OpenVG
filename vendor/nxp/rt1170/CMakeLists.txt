@@ -29,18 +29,20 @@ target_include_directories(
     ${PROJ_DIR}/include/EGL
     ${PROJ_DIR}/include/VG
 
+    ${PROJ_DIR}/vendor/nxp/${OPENVG_PLATFORM}
+
     ${VG_LITE_DIR}/include
     ${VG_LITE_DIR}/include/inc
-
-    ${PROJ_DIR}/vendor/nxp/${OPENVG_PLATFORM}/${MCU_SDK_VER}
 
     ${MCU_SDK_DIR}/rtos/freertos/freertos-kernel/include
     ${MCU_SDK_DIR}/rtos/freertos/freertos-kernel/portable/GCC/ARM_CM4F
     ${MCU_SDK_DIR}/CMSIS/Core/Include/
     ${MCU_SDK_DIR}/devices/MIMXRT1176
+    ${MCU_SDK_DIR}/devices/MIMXRT1176/periph
     ${MCU_SDK_DIR}/devices/MIMXRT1176/drivers
     ${MCU_SDK_DIR}/components/video/
     ${MCU_SDK_DIR}/components/video/display/fbdev/
     ${MCU_SDK_DIR}/components/video/display/dc
+    ${MCU_SDK_DIR}/boards/evkbmimxrt1170/openvg_examples/openvg_tiger/cm7
 )
 
