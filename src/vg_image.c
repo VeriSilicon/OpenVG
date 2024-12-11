@@ -1667,6 +1667,7 @@ void gaussianBlur(VGImage dst, VGImage src, VGfloat stdDeviationX, VGfloat stdDe
             tmp[j * width + i].g = s.g;
             tmp[j * width + i].b = s.b;
             tmp[j * width + i].a = s.a;
+            tmp[j * width + i].m_format = s.m_format;
         }
     }
 
@@ -1762,7 +1763,6 @@ void convolve(Image* dst, Image* src, int kernelWidth, int kernelHeight, int shi
     colorConvert(edge, procFormat);
 
     Color* tmp = (Color*)malloc(src->m_width * src->m_height * sizeof(Color));
- 
     //copy source region to tmp and do conversion
     for (int j = 0; j < src->m_height; j++)
     {
@@ -1775,6 +1775,7 @@ void convolve(Image* dst, Image* src, int kernelWidth, int kernelHeight, int shi
             tmp[j * src->m_width + i].g = s.g;
             tmp[j * src->m_width + i].b = s.b;
             tmp[j * src->m_width + i].a = s.a;
+            tmp[j * src->m_width + i].m_format = s.m_format;
         }
     }
 
@@ -1866,6 +1867,7 @@ void separableConvolve(Image* dst, Image* src, int kernelWidth, int kernelHeight
             tmp [j * src->m_width + i].g = s.g;
             tmp [j * src->m_width + i].b = s.b;
             tmp [j * src->m_width + i].a = s.a;
+            tmp [j * src->m_width + i].m_format = s.m_format;
         }
     }
 
@@ -1902,6 +1904,7 @@ void separableConvolve(Image* dst, Image* src, int kernelWidth, int kernelHeight
             tmp2[j * w + i].g = sum.g;
             tmp2[j * w + i].b = sum.b;
             tmp2[j * w + i].a = sum.a;
+            tmp2[j * w + i].m_format = sum.m_format;
         }
     }
 
@@ -1984,7 +1987,7 @@ void maskSurface(Drawable* drawable, const Surface* src, VGMaskOperation operati
         vg_lite_color_t color = 0;
         vg_lite_rectangle_t rect;
         if (operation == VG_FILL_MASK)
-            color = 0xFF << 24;
+            color = (vg_lite_color_t)(0xFF << 24);
         rect.x = x;
         rect.y = y;
         rect.width = w;
@@ -2077,7 +2080,7 @@ void clearGlyph(Glyph* g)
         if (!p->m_referenceCount)
             destroyImage(&p, NULL);
     }
-    Glyph a;
+    Glyph a = {0};
     a.m_state = GLYPH_UNINITIALIZED;
     a.m_path = VG_INVALID_HANDLE;
     a.m_image = VG_INVALID_HANDLE;

@@ -170,6 +170,11 @@ VGContext* createVgContext(VGContext* shareContext)
         }
         memset(vgctx->m_imageManager, 0, sizeof(VGImageManager));
         vgctx->m_imageManager->m_resources = (VGImageEntry*)malloc(sizeof(VGImageEntry));
+        if (!vgctx->m_imageManager->m_resources)
+        {
+            // Out of memory
+            goto VgContextErr;
+        }
         memset(vgctx->m_imageManager->m_resources, 0, sizeof(VGImageEntry));
 
         vgctx->m_pathManager = (VGPathManager*)malloc(sizeof(VGPathManager));
@@ -180,6 +185,11 @@ VGContext* createVgContext(VGContext* shareContext)
         }
         memset(vgctx->m_pathManager, 0, sizeof(VGPathManager));
         vgctx->m_pathManager->m_resources = (VGPathEntry*)malloc(sizeof(VGPathEntry));
+        if (!vgctx->m_pathManager->m_resources)
+        {
+            // Out of memory
+            goto VgContextErr;
+        }
         memset(vgctx->m_pathManager->m_resources, 0, sizeof(VGPathEntry));
 
         vgctx->m_paintManager = (VGPaintManager*)malloc(sizeof(VGPaintManager));
@@ -198,6 +208,11 @@ VGContext* createVgContext(VGContext* shareContext)
         }
         memset(vgctx->m_fontManager, 0, sizeof(VGFontManager));
         vgctx->m_fontManager->m_resources = (VGFontEntry*)malloc(sizeof(VGFontEntry));
+        if (!vgctx->m_fontManager->m_resources)
+        {
+            // Out of memory
+            goto VgContextErr;
+        }
         memset(vgctx->m_fontManager->m_resources, 0, sizeof(VGFontEntry));
 
         vgctx->m_maskLayerManager = (VGMaskLayerManager*)malloc(sizeof(VGMaskLayerManager));
@@ -208,6 +223,11 @@ VGContext* createVgContext(VGContext* shareContext)
         }
         memset(vgctx->m_maskLayerManager, 0, sizeof(VGMaskLayerManager));
         vgctx->m_maskLayerManager->m_resources = (VGMaskLayerEntry*)malloc(sizeof(VGMaskLayerEntry));
+        if (!vgctx->m_maskLayerManager->m_resources)
+        {
+            // Out of memory
+            goto VgContextErr;
+        }
         memset(vgctx->m_maskLayerManager->m_resources, 0, sizeof(VGMaskLayerEntry));
     }
     VG_ASSERT(vgctx->m_imageManager);
@@ -225,11 +245,25 @@ VGContext* createVgContext(VGContext* shareContext)
     return vgctx;
 
 VgContextErr:
-    if (vgctx->m_imageManager) free(vgctx->m_imageManager);
-    if (vgctx->m_pathManager) free(vgctx->m_pathManager);
-    if (vgctx->m_paintManager) free(vgctx->m_paintManager);
-    if (vgctx->m_fontManager) free(vgctx->m_fontManager);
-    if (vgctx->m_maskLayerManager) free(vgctx->m_maskLayerManager);
+    if (vgctx->m_imageManager && vgctx->m_imageManager->m_resources)
+        free(vgctx->m_imageManager->m_resources);
+    if (vgctx->m_imageManager)
+        free(vgctx->m_imageManager);
+    if (vgctx->m_pathManager && vgctx->m_pathManager->m_resources)
+        free(vgctx->m_pathManager->m_resources);
+    if (vgctx->m_pathManager)
+        free(vgctx->m_pathManager);
+    if (vgctx->m_paintManager)
+        free(vgctx->m_paintManager);
+    if (vgctx->m_fontManager && vgctx->m_fontManager->m_resources)
+        free(vgctx->m_fontManager->m_resources);
+    if (vgctx->m_fontManager)
+        free(vgctx->m_fontManager);
+    if (vgctx->m_maskLayerManager && vgctx->m_maskLayerManager->m_resources)
+        free(vgctx->m_maskLayerManager->m_resources);
+    if (vgctx->m_maskLayerManager)
+        free(vgctx->m_maskLayerManager);
+    free(vgctx);
 
     return NULL;
 }
@@ -360,7 +394,6 @@ void removeImageResource(VGContext* ctx, Image* image)
 
 void destroyImageManager(VGContext* ctx)
 {
-    VGint index;
     Objectptr object_image;
     if (ctx && ctx->m_imageManager)
     {
@@ -372,7 +405,6 @@ void destroyImageManager(VGContext* ctx)
                 {
                     /* Copy the head object */
                     object_image = ctx->m_imageManager->m_resources->m_array[i];
-                    index = object_image->name % VIV_OBJECTS_HASH;
 
                     /* Remove from the chain */
                     if (object_image == ctx->m_imageManager->m_resources->m_array[i])
@@ -509,7 +541,6 @@ void removeMaskLayerResource(VGContext* ctx, Surface* layer)
 
 void destroyMaskLayerManager(VGContext* ctx)
 {
-    VGint index;
     Objectptr object_mask;
     if (ctx && ctx->m_maskLayerManager)
     {
@@ -521,7 +552,6 @@ void destroyMaskLayerManager(VGContext* ctx)
                 {
                     /* Copy the head object */
                     object_mask = ctx->m_maskLayerManager->m_resources->m_array[i];
-                    index = object_mask->name % VIV_OBJECTS_HASH;
 
                     /* Remove from the chain */
                     if (object_mask == ctx->m_maskLayerManager->m_resources->m_array[i])
@@ -659,7 +689,6 @@ void removePathResource(VGContext* ctx, Path* path)
 
 void destroyPathManager(VGContext* ctx)
 {
-    VGint index;
     Objectptr object_path;
     if (ctx && ctx->m_pathManager)
     {
@@ -671,7 +700,6 @@ void destroyPathManager(VGContext* ctx)
                 {
                     /* Copy the head object */
                     object_path = ctx->m_pathManager->m_resources->m_array[i];
-                    index = object_path->name % VIV_OBJECTS_HASH;
 
                     /* Remove from the chain */
                     if (object_path == ctx->m_pathManager->m_resources->m_array[i])
@@ -946,7 +974,6 @@ void removeFontResource(VGContext* ctx, Font* font)
 
 void destroyFontManager(VGContext* ctx)
 {
-    VGint index;
     Objectptr object_font;
     if (ctx && ctx->m_fontManager)
     {
@@ -958,7 +985,6 @@ void destroyFontManager(VGContext* ctx)
                 {
                     /* Copy the head object */
                     object_font = ctx->m_fontManager->m_resources->m_array[i];
-                    index = object_font->name % VIV_OBJECTS_HASH;
 
                     /* Remove from the chain */
                     if (object_font == ctx->m_fontManager->m_resources->m_array[i])
