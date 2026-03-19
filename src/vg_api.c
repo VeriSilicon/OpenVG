@@ -1042,6 +1042,7 @@ static void setPaintParameterifv(VGContext* context, Paint* paint, VGPaintParamT
             }
             if (!valid || j == 0)
             {    //there are no valid stops, add implicit stops
+                j = 0;
                 GradientStop gs;
                 gs.offset = 0.0f;
                 gs.color.r = 0;
@@ -3942,7 +3943,7 @@ static void setLinearGrad(vg_lite_ext_linear_gradient_t* grad,
 
     if (!count || count > VLC_MAX_COLOR_RAMP_STOPS || color_ramp == NULL) {
         memcpy(grad->converted_ramp, default_ramp, sizeof(default_ramp));
-        grad->converted_length = sizeof(default_ramp) / 5;
+        grad->converted_length = sizeof(default_ramp) / sizeof(vg_lite_color_ramp_t);
         return;
     }
 
@@ -4028,7 +4029,7 @@ static void setLinearGrad(vg_lite_ext_linear_gradient_t* grad,
     if (trg_count == 0)
     {
         memcpy(grad->converted_ramp, default_ramp, sizeof(default_ramp));
-        grad->converted_length = sizeof(default_ramp) / 5;
+        grad->converted_length = sizeof(default_ramp) / sizeof(vg_lite_color_ramp_t);
     }
     else
     {
@@ -4288,7 +4289,7 @@ static void setRadialGrad(vg_lite_radial_gradient_t* grad,
     if (!count || count > VLC_MAX_COLOR_RAMP_STOPS || color_ramp == NULL)
     {
         memcpy(grad->converted_ramp, defaultRamp, sizeof(defaultRamp));
-        grad->converted_length = sizeof(defaultRamp) / 5;
+        grad->converted_length = sizeof(defaultRamp) / sizeof(vg_lite_color_ramp_t);
         return;
     }
 
@@ -4374,7 +4375,7 @@ static void setRadialGrad(vg_lite_radial_gradient_t* grad,
     if (trgCount == 0)
     {
         memcpy(grad->converted_ramp, defaultRamp, sizeof(defaultRamp));
-        grad->converted_length = sizeof(defaultRamp) / 5;
+        grad->converted_length = sizeof(defaultRamp) / sizeof(vg_lite_color_ramp_t);
     }
     else
     {
