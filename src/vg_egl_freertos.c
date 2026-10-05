@@ -245,8 +245,8 @@ int CreateWindow(NativeDisplayType display, int x, int y, int width,
 
     FBDEV_GetFrameBufferInfo(g_fbdev, g_fbInfo);
 
-    g_fbInfo->bufInfo.startX = (x < 0) ? 0 : (uint16_t)x;
-    g_fbInfo->bufInfo.startY = (y < 0) ? 0 : (uint16_t)y;
+    g_fbInfo->bufInfo.startX = (uint16_t)((x < 0) ? 0 : x);
+    g_fbInfo->bufInfo.startY = (uint16_t)((y < 0) ? 0 : y);
     g_fbInfo->bufInfo.width = (uint16_t)win->width;
     g_fbInfo->bufInfo.height = (uint16_t)win->height;
     g_fbInfo->bufInfo.pixelFormat = DEMO_BUFFER_PIXEL_FORMAT;
