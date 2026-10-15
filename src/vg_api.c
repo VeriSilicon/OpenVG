@@ -5654,9 +5654,14 @@ void VG_APIENTRY vgClearPath(VGPath path, VGbitfield capabilities)
         vg_lite_clear_path(p->m_vglPath);
     }
 
+    if (p->m_vglStrokePath) {
+        vg_lite_clear_path(p->m_vglStrokePath);
+    }
+
     for (VGint i = 0; i < p->m_numSegments; ++i) {
         free(p->m_data[i]);
     }
+
 
     if (p->m_segments) {
         free(p->m_segments);
@@ -5834,10 +5839,70 @@ void VG_APIENTRY vgTransformPath(VGPath dstPath, VGPath srcPath)
     VG_RETURN(VG_NO_RETVAL);
 }
 
+/* Pack the path segment array into a vg_lite command stream for the given pass. */
+static VGboolean buildVglPath(Path* p, vg_lite_path_t* vglpath, vg_lite_path_type_t pathTypeBits)
+{
+    /* Save/restore quality across vg_lite_clear_path(); bounding_box is
+     * intentionally left zeroed (degenerate = no clipping constraint). */
+    vg_lite_quality_t saved_quality = vglpath->quality;
+
+    vg_lite_clear_path(vglpath);
+
+    vglpath->quality = saved_quality;
+
+    VGuint data_num = 0;
+    VGubyte* seg_ptr = p->m_segments;
+    VGuint grid_size = _dataSize[p->m_datatype];
+    for (VGint i = 0; i < p->m_numSegments; ++i) {
+        data_num += _commandSize[*seg_ptr];
+        seg_ptr++;
+    }
+
+    VGubyte* dst_data = malloc(data_num * grid_size);
+    if (dst_data == NULL) {
+        setError(VG_OUT_OF_MEMORY_ERROR);
+        OSReleaseMutex();
+        return VG_FALSE;
+    }
+    uint8_t* vgl_opcodes = malloc(sizeof(uint8_t) * p->m_numSegments);
+    if (vgl_opcodes == NULL) {
+        free(dst_data);
+        setError(VG_OUT_OF_MEMORY_ERROR);
+        OSReleaseMutex();
+        return VG_FALSE;
+    }
+
+    VGuint bytes;
+    seg_ptr = p->m_segments;
+    VGubyte** src_data_list_ptr = p->m_data;
+    VGubyte* dst_data_ptr = dst_data;
+    uint8_t* vgl_opcodes_ptr = vgl_opcodes;
+    for (VGint i = 0; i < p->m_numSegments; ++i) {
+        *vgl_opcodes_ptr = _vglOpcodes[*seg_ptr];
+        vgl_opcodes_ptr++;
+
+        bytes = _commandSize[*seg_ptr] * grid_size;
+        seg_ptr++;
+        memcpy(dst_data_ptr, *src_data_list_ptr, bytes);
+        dst_data_ptr += bytes;
+        src_data_list_ptr++;
+    }
+
+    vglpath->format = (vg_lite_format_t)p->m_datatype;
+    vg_lite_set_path_type(vglpath, pathTypeBits);
+    vg_lite_append_path(vglpath, vgl_opcodes, (vg_lite_pointer)dst_data, (vg_lite_uint32_t)p->m_numSegments);
+
+    free(dst_data);
+    free(vgl_opcodes);
+
+    return VG_TRUE;
+}
+
 static VGboolean drawPath(VGContext* context, VGPath path, const Matrix3x3 userToSurfaceMatrix, VGbitfield paintModes)
 {
     //set up rendering surface and mask buffer
     Drawable* drawable = context->m_eglDrawable;
+
     if (!drawable)
         return VG_FALSE;   //no EGL surface is current at the moment
 
@@ -5845,53 +5910,14 @@ static VGboolean drawPath(VGContext* context, VGPath path, const Matrix3x3 userT
     Path* p = (Path*)path;
     vg_lite_path_t* vglpath = (vg_lite_path_t*)((Path*)path)->m_vglPath;
     if (vglpath == NULL) return VG_FALSE;
-    if (p->m_pathChanged || (vglpath && vglpath->stroke_path == NULL)) {
-        if (vglpath)
-            vg_lite_clear_path(vglpath);
 
-        VGuint data_num = 0;
-        VGubyte* seg_ptr = p->m_segments;
-        VGuint grid_size = _dataSize[p->m_datatype];
-        for (VGint i = 0; i < p->m_numSegments; ++i) {
-            data_num += _commandSize[*seg_ptr];
-            seg_ptr++;
-        }
+    VGboolean strokeStreamStale = p->m_pathChanged;
 
-        VGubyte* dst_data = malloc(data_num * grid_size);
-        VG_IF_ERROR(dst_data == NULL, VG_OUT_OF_MEMORY_ERROR, VG_FALSE);
-        uint8_t* vgl_opcodes = malloc(sizeof(uint8_t) * p->m_numSegments);
-        if (vgl_opcodes == NULL) {
-            free(dst_data);
-            setError(VG_OUT_OF_MEMORY_ERROR);
-            OSReleaseMutex();
-            return VG_FALSE;
-        }
+    /* Build fill stream; stroke uses a separate pass below. */
+    if (!buildVglPath(p, vglpath, VG_LITE_DRAW_FILL_PATH))
+        return VG_FALSE;
+    p->m_pathChanged = VG_FALSE;
 
-        VGuint bytes;
-        seg_ptr = p->m_segments;
-        VGubyte** src_data_list_ptr = p->m_data;
-        VGubyte* dst_data_ptr = dst_data;
-        uint8_t* vgl_opcodes_ptr = vgl_opcodes;
-        for (VGint i = 0; i < p->m_numSegments; ++i) {
-            *vgl_opcodes_ptr = _vglOpcodes[*seg_ptr];
-            vgl_opcodes_ptr++;
-
-            bytes = _commandSize[*seg_ptr] * grid_size;
-            seg_ptr++;
-            memcpy(dst_data_ptr, *src_data_list_ptr, bytes);
-            dst_data_ptr += bytes;
-            src_data_list_ptr++;
-        }
-
-        vglpath->format = (vg_lite_format_t)p->m_datatype;
-        vg_lite_set_path_type(vglpath, paintModes);
-        vg_lite_append_path(vglpath, vgl_opcodes, (vg_lite_pointer)dst_data, (vg_lite_uint32_t)p->m_numSegments);
-
-        free(dst_data);
-        free(vgl_opcodes);
-
-        p->m_pathChanged = VG_FALSE;
-    }
 
     if (context->m_renderingQuality == VG_RENDERING_QUALITY_NONANTIALIASED)
     {
@@ -6157,6 +6183,29 @@ static VGboolean drawPath(VGContext* context, VGPath path, const Matrix3x3 userT
 
         if (context->m_strokeLineWidth > 0.0f) {
             Paint* paint = (Paint*)context->m_strokePaint;
+
+            if (p->m_vglStrokePath == NULL) {
+                vg_lite_path_t* sp = (vg_lite_path_t*)malloc(sizeof(vg_lite_path_t));
+                if (sp == NULL) {
+                    setError(VG_OUT_OF_MEMORY_ERROR);
+                    return VG_FALSE;
+                }
+                vg_lite_init_path(sp, (vg_lite_format_t)p->m_datatype, vglpath->quality,
+                                  0, NULL, 0.0f, 0.0f, 0.0f, 0.0f);
+                p->m_vglStrokePath = sp;
+                /* Force the first build below. */
+                strokeStreamStale = VG_TRUE;
+            }
+
+            vg_lite_path_t* strokepath = (vg_lite_path_t*)p->m_vglStrokePath;
+            strokepath->quality = vglpath->quality;
+
+            if (strokeStreamStale) {
+                if (!buildVglPath(p, strokepath, VG_LITE_DRAW_STROKE_PATH))
+                    return VG_FALSE;
+            }
+
+            vglpath = strokepath;
 
             vglpath->path_type = VG_LITE_DRAW_STROKE_PATH;
             multMatrix3x3(&userToSurfaceStroke, &(context->m_strokePaintToUser));

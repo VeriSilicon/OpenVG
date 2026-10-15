@@ -1137,6 +1137,15 @@ void freePathImpl(Path* path) {
         path->m_vglPath = NULL;
     }
 
+    /* Lazily-allocated stroke path: flush GPU before releasing to avoid
+       use-after-free in the command buffer. */
+    if (path->m_vglStrokePath) {
+        vg_lite_finish();
+        vg_lite_clear_path(path->m_vglStrokePath);
+        free(path->m_vglStrokePath);
+        path->m_vglStrokePath = NULL;
+    }
+
     for (VGint i = 0; i < path->m_numSegments; ++i) {
         free(path->m_data[i]);
     }

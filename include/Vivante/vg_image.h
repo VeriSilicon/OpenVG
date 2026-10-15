@@ -267,6 +267,8 @@ typedef struct {
     VGint                   m_numCoordinates;
 
     void*                   m_vglPath;
+    /* Separate stream for the stroke pass, allocated lazily. */
+    void*                   m_vglStrokePath;
     VGboolean               m_pathChanged;
     VGboolean               m_pathFont;
 } Path;
