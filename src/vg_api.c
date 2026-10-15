@@ -9558,15 +9558,12 @@ static VGboolean drawImage(VGContext* context, VGImage image, const Matrix3x3 us
                     4, 0, srcbuf->height,
                     0,
                 };
-                vg_lite_path_t vglpath = {
-                    {0, 0, (vg_lite_float_t)srcbuf->width, (vg_lite_float_t)srcbuf->width},
-                    VG_LITE_HIGH,
-                    VG_LITE_S8,
-                    {0},
-                    sizeof(path_data), // path length
-                    path_data, // path data
-                    1
-                };
+                // vg_lite_init_path() ensures all fields (incl. uploaded.handle) are zero-initialised.
+                vg_lite_path_t vglpath;
+                vg_lite_init_path(&vglpath, VG_LITE_S8, VG_LITE_HIGH,
+                                  sizeof(path_data), path_data,
+                                  0, 0, (vg_lite_float_t)srcbuf->width, (vg_lite_float_t)srcbuf->height);
+                vglpath.path_changed = 1;
                 if ((linear_gradient.X0 != linear_gradient.X1) || (linear_gradient.Y0 != linear_gradient.Y1))
                 {
                     memset(&grad, 0, sizeof(grad));
@@ -9626,15 +9623,12 @@ static VGboolean drawImage(VGContext* context, VGImage image, const Matrix3x3 us
                     4, 0, srcbuf->height,
                     0,
                 };
-                vg_lite_path_t vglpath = {
-                    {0, 0, (vg_lite_float_t)srcbuf->width, (vg_lite_float_t)srcbuf->width},
-                    VG_LITE_HIGH,
-                    VG_LITE_S8,
-                    {0},
-                    sizeof(path_data), // path length
-                    path_data, // path data
-                    1
-                };
+                // vg_lite_init_path() ensures all fields (incl. uploaded.handle) are zero-initialised.
+                vg_lite_path_t vglpath;
+                vg_lite_init_path(&vglpath, VG_LITE_S8, VG_LITE_HIGH,
+                                  sizeof(path_data), path_data,
+                                  0, 0, (vg_lite_float_t)srcbuf->width, (vg_lite_float_t)srcbuf->height);
+                vglpath.path_changed = 1;
                 if (radialGradient.r > 0)
                 {
                     memset(&grad, 0, sizeof(grad));
